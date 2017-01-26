@@ -1,4 +1,6 @@
 package examplefuncsplayer;
+import java.util.Random;
+
 import battlecode.common.*;
 
 public strictfp class RobotPlayer {
@@ -144,7 +146,9 @@ public strictfp class RobotPlayer {
         System.out.println("I'm an Scout!");
         Team enemy = rc.getTeam().opponent();
         MapLocation[] archonLoc = rc.getInitialArchonLocations(enemy);
-        boolean enemyFound=false;
+        Random ran = new Random();
+        int amountOfArchons = archonLoc.length, archonTarget=0;
+        boolean enemyFound=false,close, neverReach=false;
         // The code you want your robot to perform every round should be in this loop
         while (true) {
         	
@@ -156,22 +160,38 @@ public strictfp class RobotPlayer {
                 // See if there are any nearby enemy robots
                 RobotInfo[] robots = rc.senseNearbyRobots(-1, enemy);
 
+                Direction enemyDir = null;
+                
                 // If there are some...
                 if (robots.length > 0) {
                 	enemyFound=true;
+                	enemyDir =rc.getLocation().directionTo(robots[0].location);
                     // And we have enough bullets, and haven't attacked yet this turn...
                     if (rc.canFireSingleShot()) {
                         // ...Then fire a bullet in the direction of the enemy.
-                        rc.fireSingleShot(rc.getLocation().directionTo(robots[0].location));
+                        rc.fireSingleShot(enemyDir);
                     }
                 }
                 else enemyFound=false;
                 
+                MapLocation archonLocTar = archonLoc[archonTarget];
+                close = close(rc.getType(),rc.getLocation(), archonLocTar);
+                if(close)
+                {
+                	neverReach = true;
+                }
+                
                 // Move randomly
                 if(enemyFound)
+                {
+                	tryMove(enemyDir.opposite());
+                	tryMove(enemyDir);
+                	archonTarget= ran.nextInt(amountOfArchons);
+                }
+                else if(close && !archonNear(robots))
                 	tryMove(randomDirection());
-                else 
-                	tryMove(rc.getLocation().directionTo(archonLoc[0]));
+                else
+                	tryMove(rc.getLocation().directionTo(archonLoc[archonTarget]));
                 
 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
@@ -183,7 +203,20 @@ public strictfp class RobotPlayer {
             }
         }
     }
-	
+	static boolean close(RobotType rob, MapLocation map, MapLocation map2)
+	{
+		float distance = map.distanceTo(map2);
+		return distance< rob.sensorRadius ? true: false;
+	}
+	static boolean archonNear(RobotInfo[] robList)
+	{
+		for(int i=0; i<robList.length;i++)
+		{
+			if(robList[i].type == RobotType.ARCHON)
+				return true;
+		}
+		return false;
+	}
 
     static void runSoldier() throws GameActionException {
         System.out.println("I'm an soldier!");
@@ -207,7 +240,6 @@ public strictfp class RobotPlayer {
                         rc.fireSingleShot(rc.getLocation().directionTo(robots[0].location));
                     }
                 }
-
                 // Move randomly
                 tryMove(randomDirection());
 
