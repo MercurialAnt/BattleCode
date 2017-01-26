@@ -25,6 +25,9 @@ public strictfp class RobotPlayer {
             case GARDENER:
                 runGardener();
                 break;
+            case SCOUT:
+            	runScout();
+            	break;
             case SOLDIER:
                 runSoldier();
                 break;
@@ -85,7 +88,7 @@ public strictfp class RobotPlayer {
 
                 // Generate a random direction
                 Direction dir = randomDirection();
-                Direction buildDir = new Direction ((float) (2*Math.PI));
+                Direction buildDir = new Direction ((float) (5*Math.PI/3));
                 TreeInfo[] trees = rc.senseNearbyTrees(GameConstants.INTERACTION_DIST_FROM_EDGE+1, rc.getTeam());
                 
                 // plant trees
@@ -97,7 +100,7 @@ public strictfp class RobotPlayer {
                 		rc.plantTree(treeDir);
                 	}
                 }
-                
+                                
                 //water trees
                 int weakestIndex=0;
                 float weakest=Float.MAX_VALUE;
@@ -119,15 +122,12 @@ public strictfp class RobotPlayer {
                 	rc.water(trees[weakestIndex].ID);
                 }
                 
-                
-                
                 // Randomly attempt to build a soldier or lumberjack in this direction
-                System.out.println("trying to build a robot");
+                if(rc.canBuildRobot(RobotType.SCOUT, buildDir))
+                	System.out.println("trying to build a robot");
                 if (rc.canBuildRobot(RobotType.SCOUT, buildDir)&& rc.isBuildReady() ) {
                     rc.buildRobot(RobotType.SCOUT, buildDir);
                     System.out.println("plane");
-                } else if (rc.canBuildRobot(RobotType.LUMBERJACK, buildDir) && Math.random() < .01 && rc.isBuildReady()) {
-                    rc.buildRobot(RobotType.LUMBERJACK, buildDir);
                 }
 
 
@@ -140,6 +140,50 @@ public strictfp class RobotPlayer {
             }
         }
     }
+	static void runScout() throws GameActionException {
+        System.out.println("I'm an Scout!");
+        Team enemy = rc.getTeam().opponent();
+        MapLocation[] archonLoc = rc.getInitialArchonLocations(enemy);
+        boolean enemyFound=false;
+        // The code you want your robot to perform every round should be in this loop
+        while (true) {
+        	
+
+            // Try/catch blocks stop unhandled exceptions, which cause your robot to explode
+            try {
+                MapLocation myLocation = rc.getLocation();
+
+                // See if there are any nearby enemy robots
+                RobotInfo[] robots = rc.senseNearbyRobots(-1, enemy);
+
+                // If there are some...
+                if (robots.length > 0) {
+                	enemyFound=true;
+                    // And we have enough bullets, and haven't attacked yet this turn...
+                    if (rc.canFireSingleShot()) {
+                        // ...Then fire a bullet in the direction of the enemy.
+                        rc.fireSingleShot(rc.getLocation().directionTo(robots[0].location));
+                    }
+                }
+                else enemyFound=false;
+                
+                // Move randomly
+                if(enemyFound)
+                	tryMove(randomDirection());
+                else 
+                	tryMove(rc.getLocation().directionTo(archonLoc[0]));
+                
+
+                // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
+                Clock.yield();
+
+            } catch (Exception e) {
+                System.out.println("Scout Exception");
+                e.printStackTrace();
+            }
+        }
+    }
+	
 
     static void runSoldier() throws GameActionException {
         System.out.println("I'm an soldier!");
