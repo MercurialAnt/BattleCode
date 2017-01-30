@@ -131,7 +131,9 @@ public strictfp class RobotPlayer {
                     rc.buildRobot(RobotType.SCOUT, buildDir);
                     System.out.println("plane");
                 }
-
+                if (rc.canBuildRobot(RobotType.LUMBERJACK, buildDir)&& rc.isBuildReady() ) {
+                    rc.buildRobot(RobotType.LUMBERJACK, buildDir);
+                    System.out.println("lumberjack");
 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
@@ -189,9 +191,12 @@ public strictfp class RobotPlayer {
                 	archonTarget= ran.nextInt(amountOfArchons);
                 }
                 else if(close && !archonNear(robots))
-                	tryMove(randomDirection());
-                else
+                {
+                	archonTarget = ran.nextInt(amountOfArchons);
                 	tryMove(rc.getLocation().directionTo(archonLoc[archonTarget]));
+                }
+                else
+                tryMove(rc.getLocation().directionTo(archonLoc[archonTarget]));
                 
 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
@@ -265,21 +270,21 @@ public strictfp class RobotPlayer {
 
                 // See if there are any enemy robots within striking range (distance 1 from lumberjack's radius)
                 RobotInfo[] robots = rc.senseNearbyRobots(RobotType.LUMBERJACK.bodyRadius+GameConstants.LUMBERJACK_STRIKE_RADIUS, enemy);
-
-                if(robots.length > 0 && !rc.hasAttacked()) {
+                TreeInfo[] trees = rc.senseNearbyTrees(RobotType.LUMBERJACK.bodyRadius+GameConstants.LUMBERJACK_STRIKE_RADIUS, Team.NEUTRAL);
+                if((robots.length > 0 || trees.length > 0) && !rc.hasAttacked()) {
                     // Use strike() to hit all nearby robots!
                     rc.strike();
                 } else {
-                    // No close robots, so search for robots within sight radius
-                    robots = rc.senseNearbyRobots(-1,enemy);
+                    // No close robots, so search for trees within lumberjack sensor radius
+                    trees = rc.senseNearbyTrees(RobotType.LUMBERJACK.sensorRadius, Team.NEUTRAL);
 
-                    // If there is a robot, move towards it
-                    if(robots.length > 0) {
+                    // If there is a tree, move towards it
+                    if(trees.length > 0) {
                         MapLocation myLocation = rc.getLocation();
-                        MapLocation enemyLocation = robots[0].getLocation();
-                        Direction toEnemy = myLocation.directionTo(enemyLocation);
+                        MapLocation treeLocation = trees[0].location;
+                        Direction toTree = myLocation.directionTo(treeLocation);
 
-                        tryMove(toEnemy);
+                        tryMove(toTree);
                     } else {
                         // Move Randomly
                         tryMove(randomDirection());
