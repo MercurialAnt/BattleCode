@@ -183,6 +183,7 @@ public strictfp class RobotPlayer {
                 MapLocation myLocation = rc.getLocation();
 
                 // See if there are any nearby enemy robots
+                BulletInfo[] bullets = rc.senseNearbyBullets();
                 RobotInfo[] robots = rc.senseNearbyRobots(-1, enemy);
                 for(int i=0;i<robots.length;i++)
                 {
@@ -199,14 +200,14 @@ public strictfp class RobotPlayer {
                 
                 
                 	
-                
+                Direction bulletDir = null;
                 Direction enemyDir = null;
-                
+                boolean isArchon = false;
                 // If there are some...
                 if (robots.length > 0) {
                 	enemyFound=true;
-                	enemyDir =rc.getLocation().directionTo(robots[0].location);
-                	
+                	enemyDir =myLocation.directionTo(robots[0].location);
+                	if(robots[0] = RobotType.ARCHON)isArchon = true;
                     // And we have enough bullets, and haven't attacked yet this turn...
                     if (rc.canFireSingleShot()) {
                         // ...Then fire a bullet in the direction of the enemy.
@@ -216,13 +217,20 @@ public strictfp class RobotPlayer {
                 else enemyFound=false;
                 
                 MapLocation archonLocTar = archonLoc[archonTarget];
-                close = close(rc.getType(),rc.getLocation(), archonLocTar);
+                close = close(rc.getType(), myLocation, archonLocTar);
                 if(close)
                 {
                 	neverReach = true;
                 }
                 
-                // Move randomly
+                //kite?
+                //if(isArchon)
+                if(robots.length > 0 && bullets.lengths > 0 && (myLocation.distanceTo(robots[0].location) > myLocation.distanceTo(bullets[0].location))
+                {
+                	bulletDir = myLocation.directionTo(bullets[0].location);
+                	tryMove(bulletDir.opposite());
+                }
+                else
                 if(enemyFound)
                 {
                 	tryMove(enemyDir.opposite());
